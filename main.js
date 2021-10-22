@@ -47,38 +47,54 @@
       return Constructor;
     }
 
-    var canvas = document.getElementsByTagName("canvas")[0];
+    var canvas = document.getElementById("canvas");
     resizeCanvas();
     var config = {
       SIM_RESOLUTION: 128,
       DYE_RESOLUTION: 1024,
       CAPTURE_RESOLUTION: 512,
       DENSITY_DISSIPATION: 1,
-      VELOCITY_DISSIPATION: 0.2,
-      PRESSURE: 0.8,
+      // How quickly the splats disappear (higher value means splats stays longer)
+      VELOCITY_DISSIPATION: 2.0,
+      // How powerfully does the brush push away previous splats
+      // Values above 1.0 seem to cause some sort of a "matrix"
+      PRESSURE: 0.5,
       PRESSURE_ITERATIONS: 20,
+      // How curled up the splats are (lower value means more curled)
       CURL: 30,
-      SPLAT_RADIUS: 0.25,
+      // How big the colour splats are
+      SPLAT_RADIUS: 0.1,
+      // 1 seems to make the splats very dim
       SPLAT_FORCE: 6000,
-      SHADING: true,
+      // Whether to add shadows
+      SHADING: false,
+      // False seems to make the splats end up the same colour, i.e. blue
       COLORFUL: true,
-      COLOR_UPDATE_SPEED: 10,
+      // How fast the splats are updated
+      COLOR_UPDATE_SPEED: 1,
+      // Whether to pause the canvas as you're drawing (not remove anything)
       PAUSED: false,
+      // Colour of the background (values 0 to 255)
       BACK_COLOR: {
-        r: 0,
-        g: 0,
-        b: 0,
+        r: 255,
+        g: 255,
+        b: 255,
       },
+      // Whether the background is transparent tiles
       TRANSPARENT: false,
-      BLOOM: true,
+      // Whether to add some lighting inside the splats
+      BLOOM: false,
       BLOOM_ITERATIONS: 8,
       BLOOM_RESOLUTION: 256,
       BLOOM_INTENSITY: 0.8,
       BLOOM_THRESHOLD: 0.6,
       BLOOM_SOFT_KNEE: 0.7,
-      SUNRAYS: true,
+      // Whether to add some light rays when the splats are created
+      SUNRAYS: false,
       SUNRAYS_RESOLUTION: 196,
       SUNRAYS_WEIGHT: 1.0,
+      // Whether to splash initial splats
+      INITIAL_SPLATS: false,
     };
 
     function PointerPrototype() {
@@ -430,6 +446,7 @@
       "\n    precision mediump float;\n    precision mediump sampler2D;\n\n    varying highp vec2 vUv;\n    varying highp vec2 vL;\n    varying highp vec2 vR;\n    varying highp vec2 vT;\n    varying highp vec2 vB;\n    uniform sampler2D uPressure;\n    uniform sampler2D uVelocity;\n\n    void main () {\n        float L = texture2D(uPressure, vL).x;\n        float R = texture2D(uPressure, vR).x;\n        float T = texture2D(uPressure, vT).x;\n        float B = texture2D(uPressure, vB).x;\n        vec2 velocity = texture2D(uVelocity, vUv).xy;\n        velocity.xy -= vec2(R - L, T - B);\n        gl_FragColor = vec4(velocity, 0.0, 1.0);\n    }\n"
     );
 
+    // Seems to enable drawing, do not remove the immediate () call
     var blit = (function () {
       gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
       gl.bufferData(
@@ -792,9 +809,11 @@
     initFramebuffers();
 
     // Initial splats
-    setTimeout(function () {
-      multipleSplats(parseInt(Math.random() * 20) + 5);
-    }, 200);
+    if (config.INITIAL_SPLATS) {
+      setTimeout(function () {
+        multipleSplats(parseInt(Math.random() * 20) + 5);
+      }, 200);
+    }
 
     var lastUpdateTime = Date.now();
 
